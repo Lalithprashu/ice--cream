@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Welcome to Ice Cream Delight</h1>
+    
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description }}</p>
+                    <p class="card-text"><strong>Price:</strong> ₹{{ "%.2f"|format(product.price) }}</p>
+                    {% if current_user.is_authenticated %}
+                        <button class="btn btn-primary add-to-cart" data-product-id="{{ product.id }}">Add to Cart</button>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">Login to Order</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <p>No products available at the moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

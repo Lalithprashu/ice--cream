@@ -1,0 +1,197 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin - Orders{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Order Management</h2>
+    </div>
+
+    <!-- Order Status Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Orders</h5>
+                    <h2 class="card-text">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Processing</h5>
+                    <h2 class="card-text">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Ready</h5>
+                    <h2 class="card-text">{{ orders|selectattr('status', 'equalto', 'ready')|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Delivered</h5>
+                    <h2 class="card-text">{{ orders|selectattr('status', 'equalto', 'delivered')|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Time in Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>
+                                    <div>{{ order.user.username }}</div>
+                                    <small class="text-muted">{{ order.user.email }}</small>
+                                    {% if order.address %}
+                                    <small class="d-block text-muted">
+                                        <i class="fas fa-map-marker-alt"></i> {{ order.address.street }}, {{ order.address.city }}, {{ order.address.postal_code }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div>{{ order.created_at.strftime('%Y-%m-%d') }}</div>
+                                    <small class="text-muted">{{ order.created_at.strftime('%H:%M') }}</small>
+                                </td>
+                                <td>
+                                    {% for item in order.items %}
+                                        <div class="mb-1">
+                                            {{ item.quantity }}x {{ item.product.name }}
+                                            {% if item.customization %}
+                                                <small class="text-muted">
+                                                    ({{ item.customization.size|title }})
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </td>
+                                <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                                <td>
+                                    <span class="badge {% if order.status == 'delivered' %}bg-success
+                                                     {% elif order.status == 'cancelled' %}bg-danger
+                                                     {% elif order.status == 'ready' %}bg-primary
+                                                     {% else %}bg-warning{% endif %}">
+                                        {{ order.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% set time_diff = (now - order.updated_at).total_seconds() %}
+                                    {% if time_diff < 3600 %}
+                                        {{ (time_diff / 60)|int }}m ago
+                                    {% elif time_diff < 86400 %}
+                                        {{ (time_diff / 3600)|int }}h ago
+                                    {% else %}
+                                        {{ (time_diff / 86400)|int }}d ago
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('admin_order_details', order_id=order.id) }}" class="btn btn-sm btn-primary">View</a>
+                                        <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"></button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{{ url_for('admin_order_details', order_id=order.id) }}">View Details</a></li>
+                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#updateStatusModal{{ order.id }}">Update Status</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Status Update Modal -->
+                            <div class="modal fade" id="updateStatusModal{{ order.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Update Order #{{ order.id }} Status</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="status{{ order.id }}" class="form-label">New Status</label>
+                                                    <select name="status" id="status{{ order.id }}" class="form-select">
+                                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                        <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                                        <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                                                        <option value="ready" {% if order.status == 'ready' %}selected{% endif %}>Ready</option>
+                                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Update Status</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">No orders found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

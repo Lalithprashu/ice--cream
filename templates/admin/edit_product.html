@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block head %}
+<!-- Add Cropper.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Edit Product</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="edit-product-form">
+                        {{ form.csrf_token }}
+                        
+                        <!-- Image Preview and Cropping Section -->
+                        <div class="mb-4">
+                            <h5>Product Image</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="current-image mb-3">
+                                        <h6>Current Image</h6>
+                                        {% if product.image_url %}
+                                        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                                             class="img-thumbnail" style="max-height: 200px;">
+                                        {% else %}
+                                        <p class="text-muted">No current image</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="new-image-preview">
+                                        <h6>New Image Preview</h6>
+                                        <div id="image-preview-container" style="display: none;">
+                                            <img id="preview-image" class="img-thumbnail" style="max-height: 200px;">
+                                        </div>
+                                        <div id="cropper-container" style="display: none; max-height: 300px;">
+                                            <img id="cropper-image" class="img-fluid">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Name Field -->
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=4) }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Price Field -->
+                        <div class="mb-3">
+                            {{ form.price.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                {{ form.price(class="form-control" + (" is-invalid" if form.price.errors else "")) }}
+                            </div>
+                            {% if form.price.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.price.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Category Field -->
+                        <div class="mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% if form.category.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.category.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Stock Field -->
+                        <div class="mb-3">
+                            {{ form.stock.label(class="form-label") }}
+                            {{ form.stock(class="form-control" + (" is-invalid" if form.stock.errors else "")) }}
+                            {% if form.stock.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.stock.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Image Upload Field -->
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else "")) }}
+                            {% if form.image.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.image.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Supported formats: JPG, PNG, GIF. Max size: 16MB</div>
+                        </div>
+
+                        <!-- Cropping Controls -->
+                        <div id="cropping-controls" class="mb-3" style="display: none;">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-primary" id="crop-rotate-left">
+                                    <i class="fas fa-undo"></i> Rotate Left
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="crop-rotate-right">
+                                    <i class="fas fa-redo"></i> Rotate Right
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="crop-zoom-in">
+                                    <i class="fas fa-search-plus"></i> Zoom In
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="crop-zoom-out">
+                                    <i class="fas fa-search-minus"></i> Zoom Out
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Update Product</button>
+                            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add Cropper.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<script>
+let cropper = null;
+const form = document.getElementById('edit-product-form');
+const imageInput = document.querySelector('input[type="file"]');
+const previewContainer = document.getElementById('image-preview-container');
+const previewImage = document.getElementById('preview-image');
+const cropperContainer = document.getElementById('cropper-container');
+const cropperImage = document.getElementById('cropper-image');
+const croppingControls = document.getElementById('cropping-controls');
+
+// Handle image upload
+imageInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Show preview
+            previewImage.src = e.target.result;
+            previewContainer.style.display = 'block';
+            
+            // Initialize cropper
+            cropperImage.src = e.target.result;
+            cropperContainer.style.display = 'block';
+            croppingControls.style.display = 'block';
+            
+            if (cropper) {
+                cropper.destroy();
+            }
+            
+            cropper = new Cropper(cropperImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: true,
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Cropping controls
+document.getElementById('crop-rotate-left').addEventListener('click', () => {
+    if (cropper) cropper.rotate(-90);
+});
+
+document.getElementById('crop-rotate-right').addEventListener('click', () => {
+    if (cropper) cropper.rotate(90);
+});
+
+document.getElementById('crop-zoom-in').addEventListener('click', () => {
+    if (cropper) cropper.zoom(0.1);
+});
+
+document.getElementById('crop-zoom-out').addEventListener('click', () => {
+    if (cropper) cropper.zoom(-0.1);
+});
+
+// Handle form submission
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (cropper) {
+        // Get the cropped canvas
+        const canvas = cropper.getCroppedCanvas({
+            width: 800,
+            height: 800
+        });
+        
+        // Convert canvas to blob
+        canvas.toBlob(function(blob) {
+            // Create a new File object
+            const croppedFile = new File([blob], imageInput.files[0].name, {
+                type: imageInput.files[0].type
+            });
+            
+            // Create a new DataTransfer object
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(croppedFile);
+            
+            // Set the file input's files
+            imageInput.files = dataTransfer.files;
+            
+            // Submit the form
+            form.submit();
+        }, imageInput.files[0].type);
+    } else {
+        form.submit();
+    }
+});
+</script>
+{% endblock %} 

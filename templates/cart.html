@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Shopping Cart</h2>
+    
+    {% if cart_items %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                        {{ item.name }}
+                        {% if item.customization %}
+                        <small class="d-block text-muted">
+                            {% if item.customization.size %}Size: {{ item.customization.size }}{% endif %}
+                            {% if item.customization.container %}Container: {{ item.customization.container }}{% endif %}
+                            {% if item.customization.toppings %}
+                            <br>Toppings: 
+                            {% for topping in item.customization.toppings %}
+                                {{ topping.name }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                            {% if item.customization.extra_notes %}
+                            <br>Notes: {{ item.customization.extra_notes }}
+                            {% endif %}
+                        </small>
+                        {% endif %}
+                    </td>
+                    <td>₹{{ "%.2f"|format(item.price) }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ "%.2f"|format(item.total) }}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm remove-from-cart" data-product-id="{{ item.id }}">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                    <td><strong>₹{{ "%.2f"|format(total) }}</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <div class="text-end mt-3">
+        <a href="{{ url_for('checkout') }}" class="btn btn-primary">Proceed to Checkout</a>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Your cart is empty. <a href="{{ url_for('index') }}">Continue shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

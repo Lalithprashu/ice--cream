@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details - Ice Cream Delight{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Order #{{ order.id }}</h3>
+                    <span class="badge {% if order.status == 'delivered' %}bg-success
+                                     {% elif order.status == 'cancelled' %}bg-danger
+                                     {% elif order.status == 'ready' %}bg-primary
+                                     {% else %}bg-warning{% endif %}">
+                        {{ order.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4>Order Items</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.product.image_url %}
+                                                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                                {% endif %}
+                                                <div>
+                                                    <strong>{{ item.product.name }}</strong>
+                                                    {% if item.customization %}
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            Size: {{ item.customization.size|title }}<br>
+                                                            Container: {{ item.customization.container|title }}<br>
+                                                            Toppings: 
+                                                            {% for topping in item.customization.toppings %}
+                                                                {{ topping.name }}{% if not loop.last %}, {% endif %}
+                                                            {% endfor %}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₹{{ "%.2f"|format(item.price) }}</td>
+                                        <td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td><strong>₹{{ "%.2f"|format(order.total_amount) }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Order Information</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Order Date:</strong><br>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>Last Updated:</strong><br>{{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% if order.tracking_number %}
+                        <p><strong>Tracking Number:</strong><br>{{ order.tracking_number }}</p>
+                    {% endif %}
+                    {% if order.estimated_delivery_time %}
+                        <p><strong>Estimated Delivery:</strong><br>{{ order.estimated_delivery_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+                    {% if order.delivery_address %}
+                        <p><strong>Delivery Address:</strong><br>{{ order.delivery_address }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Order Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Order Details #{{ order.id }}</h2>
+        <div>
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">Back to Orders</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Order Items</h4>
+                    <span class="badge {% if order.status == 'delivered' %}bg-success
+                                     {% elif order.status == 'cancelled' %}bg-danger
+                                     {% elif order.status == 'ready' %}bg-primary
+                                     {% else %}bg-warning{% endif %}">
+                        {{ order.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.product.image_url %}
+                                                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                                {% endif %}
+                                                <div>
+                                                    <strong>{{ item.product.name }}</strong>
+                                                    {% if item.customization %}
+                                                        <br>
+                                                        <small class="text-muted">
+                                     
+                                                            Size: {{ item.customization.size|title }}<br>
+                                                            Container: {{ item.customization.container|title }}<br>
+                                                            Toppings: 
+                                                            {% for topping in item.customization.toppings %}
+                                                                {{ topping.name }}{% if not loop.last %}, {% endif %}
+                                                            {% endfor %}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₹{{ "%.2f"|format(item.price) }}</td>
+                                        <td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td><strong>₹{{ "%.2f"|format(order.total_amount) }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Customer Information</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong><br>{{ order.user.username }}</p>
+                    <p><strong>Email:</strong><br>{{ order.user.email }}</p>
+                    {% if order.delivery_address %}
+                        <p><strong>Delivery Address:</strong><br>{{ order.delivery_address }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Order Information</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Order Date:</strong><br>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>Last Updated:</strong><br>{{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% if order.tracking_number %}
+                        <p><strong>Tracking Number:</strong><br>{{ order.tracking_number }}</p>
+                    {% endif %}
+                    {% if order.estimated_delivery_time %}
+                        <p><strong>Estimated Delivery:</strong><br>{{ order.estimated_delivery_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+
+                    <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST" class="mt-3">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Update Status</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                                <option value="ready" {% if order.status == 'ready' %}selected{% endif %}>Ready</option>
+                                <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

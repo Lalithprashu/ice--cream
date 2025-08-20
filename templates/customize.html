@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Customize Your Ice Cream{% endblock %}
+
+        // Initialize price from server-side data
+        const basePrice = parseFloat('{{ "%.2f"|format(product.price) }}');
+
+        // Handle size selection
+        document.querySelectorAll('.size-radio').forEach(radio => {
+            radio.addEventListener('change', updatePrice);
+        });
+
+        // Size prices
+        const sizePrices = {
+            'small': 0,
+            'medium': 20,
+            'large': 40
+        };
+
+        // Update price when size changes
+        document.querySelectorAll('input[name="size"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const price = sizePrices[this.value];
+                document.getElementById('size-upgrade').textContent = `₹${price.toFixed(2)}`;
+                updatePrice();
+            });
+        });
+
+        // Update price when toppings change
+        document.querySelectorAll('.topping-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updatePrice();
+            });
+        });
+
+        // Price calculation function
+        function updatePrice() {
+            const basePrice = {{ product.price }};
+            let total = basePrice;
+            
+            // Add size upgrade cost
+            const size = document.querySelector('input[name="size"]:checked').value;
+            const sizeUpgrade = size === 'medium' ? 20 : (size === 'large' ? 40 : 0);
+            document.getElementById('size-upgrade').textContent = `₹${sizeUpgrade.toFixed(2)}`;
+            total += sizeUpgrade;
+            
+            // Add toppings cost
+            let toppingsTotal = 0;
+            document.querySelectorAll('.topping-checkbox:checked').forEach(topping => {
+                toppingsTotal += parseFloat(topping.dataset.price);
+            });
+            document.getElementById('toppings-total').textContent = `₹${toppingsTotal.toFixed(2)}`;
+            total += toppingsTotal;
+            
+            // Update total price
+            document.getElementById('total-price').textContent = `₹${total.toFixed(2)}`;
+        }
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Customize Your Ice Cream</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <img src="{{ product.image_url }}" alt="{{ product.name }}" class="img-fluid rounded">
+                            <h3 class="mt-3">{{ product.name }}</h3>
+                            <p class="text-muted">Base Price: ₹{{ "%.2f"|format(product.price) }}</p>
+                        </div>
+                    </div>
+
+                    <form id="customize-form">
+                        <input type="hidden" id="product-id" value="{{ product.id }}">
+                        
+                        <!-- Size Selection -->
+                        <div class="mb-4">
+                            <h4>Choose Size</h4>
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="size" id="small" value="small" checked>
+                                <label class="btn btn-outline-primary" for="small">Small (+₹0)</label>
+                                
+                                <input type="radio" class="btn-check" name="size" id="medium" value="medium">
+                                <label class="btn btn-outline-primary" for="medium">Medium (+₹20)</label>
+                                
+                                <input type="radio" class="btn-check" name="size" id="large" value="large">
+                                <label class="btn btn-outline-primary" for="large">Large (+₹40)</label>
+                            </div>
+                        </div>
+
+                        <!-- Container Selection -->
+                        <div class="mb-4">
+                            <h4>Choose Container</h4>
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="container" id="cone" value="cone" checked>
+                                <label class="btn btn-outline-primary" for="cone">Cone</label>
+                                
+                                <input type="radio" class="btn-check" name="container" id="cup" value="cup">
+                                <label class="btn btn-outline-primary" for="cup">Cup</label>
+                            </div>
+                        </div>
+
+                        <!-- Toppings Selection -->
+                        <div class="mb-4">
+                            <h4>Add Toppings</h4>
+                            <div class="row">
+                                {% for topping in toppings %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        {% if topping.image_url %}
+                                        <img src="{{ topping.image_url }}" class="card-img-top" alt="{{ topping.name }}">
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input topping-checkbox" type="checkbox" 
+                                                       value="{{ topping.id }}" id="topping-{{ topping.id }}"
+                                                       data-price="{{ topping.price }}">
+                                                <label class="form-check-label" for="topping-{{ topping.id }}">
+                                                    {{ topping.name }} (+₹{{ "%.2f"|format(topping.price) }})
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">{{ topping.description }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Extra Notes -->
+                        <div class="mb-4">
+                            <h4>Special Instructions</h4>
+                            <textarea class="form-control" id="extra-notes" rows="3" 
+                                      placeholder="Any special requests or allergies?"></textarea>
+                        </div>
+
+                        <!-- Price Summary -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5>Price Summary</h5>
+                                <div class="d-flex justify-content-between">
+                                    <span>Base Price:</span>
+                                    <span>₹{{ "%.2f"|format(product.price) }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Size Upgrade:</span>
+                                    <span id="size-upgrade">₹0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Toppings:</span>
+                                    <span id="toppings-total">₹0.00</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Total:</strong>
+                                    <strong id="total-price">₹{{ "%.2f"|format(product.price) }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Add to Cart</button>
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize price from server-side data
+    const basePrice = parseFloat('{{ "%.2f"|format(product.price) }}');
+    const form = document.getElementById('customize-form');
+    const sizeUpgrade = document.getElementById('size-upgrade');
+    const toppingsTotal = document.getElementById('toppings-total');
+    const totalPrice = document.getElementById('total-price');
+    const toppingCheckboxes = document.querySelectorAll('.topping-checkbox');
+
+    // Size prices
+    const sizePrices = {
+        'small': 0,
+        'medium': 20,
+        'large': 40
+    };
+
+    // Update price when size changes
+    document.querySelectorAll('input[name="size"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const price = sizePrices[this.value];
+            sizeUpgrade.textContent = `₹${price.toFixed(2)}`;
+            updateTotal();
+        });
+    });
+
+    // Update price when toppings change
+    toppingCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateTotal();
+        });
+    });
+
+    function updateTotal() {
+        const selectedSize = document.querySelector('input[name="size"]:checked').value;
+        const sizePrice = sizePrices[selectedSize];
+        
+        let toppingsPrice = 0;
+        toppingCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                toppingsPrice += parseFloat(checkbox.dataset.price);
+            }
+        });
+
+        sizeUpgrade.textContent = `₹${sizePrice.toFixed(2)}`;
+        toppingsTotal.textContent = `₹${toppingsPrice.toFixed(2)}`;
+        totalPrice.textContent = `₹${(basePrice + sizePrice + toppingsPrice).toFixed(2)}`;
+    }
+
+    // Handle form submission
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedToppings = Array.from(toppingCheckboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => parseInt(checkbox.value));
+
+            const data = {
+                product_id: parseInt(document.getElementById('product-id').value),
+                size: document.querySelector('input[name="size"]:checked').value,
+                container: document.querySelector('input[name="container"]:checked').value,
+                toppings: selectedToppings,
+                extra_notes: document.getElementById('extra-notes').value
+            };
+
+            fetch('/api/customize/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/cart';
+                } else {
+                    alert(data.message || 'Failed to add item to cart');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+
+    // Initialize the price display
+    updateTotal();
+});
+</script>
+
+{% block scripts %}
+<script>
+// Initialize price from server-side data
+const basePrice = parseFloat('{{ "%.2f"|format(product.price) }}');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('customize-form');
+    const sizeUpgrade = document.getElementById('size-upgrade');
+    const toppingsTotal = document.getElementById('toppings-total');
+    const totalPrice = document.getElementById('total-price');
+    const toppingCheckboxes = document.querySelectorAll('.topping-checkbox');
+
+    // Size prices
+    const sizePrices = {
+        'small': 0,
+        'medium': 20,
+        'large': 40
+    };
+
+    // Update price when size changes
+    document.querySelectorAll('input[name="size"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const price = sizePrices[this.value];
+            sizeUpgrade.textContent = `₹${price.toFixed(2)}`;
+            updateTotal();
+        });
+    });
+
+    // Update price when toppings change
+    toppingCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateTotal();
+        });
+    });
+
+    function updateTotal() {
+        const selectedSize = document.querySelector('input[name="size"]:checked').value;
+        const sizePrice = sizePrices[selectedSize];
+        
+        let toppingsPrice = 0;
+        toppingCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                toppingsPrice += parseFloat(checkbox.dataset.price);
+            }
+        });
+
+        sizeUpgrade.textContent = `₹${sizePrice.toFixed(2)}`;
+        toppingsTotal.textContent = `₹${toppingsPrice.toFixed(2)}`;
+        totalPrice.textContent = `₹${(basePrice + sizePrice + toppingsPrice).toFixed(2)}`;
+    }
+
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const selectedToppings = Array.from(toppingCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => parseInt(checkbox.value));
+
+        const data = {
+            product_id: parseInt(document.getElementById('product-id').value),
+            size: document.querySelector('input[name="size"]:checked').value,
+            container: document.querySelector('input[name="container"]:checked').value,
+            toppings: selectedToppings,
+            extra_notes: document.getElementById('extra-notes').value
+        };
+
+        fetch('/api/customize/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = '/cart';
+            } else {
+                alert(data.message || 'Error adding item to cart');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error adding the item to your cart. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize price from server-side data
+    const basePrice = parseFloat('{{ "%.2f"|format(product.price) }}');
+    const form = document.getElementById('customize-form');
+    const sizeUpgrade = document.getElementById('size-upgrade');
+    const toppingsTotal = document.getElementById('toppings-total');
+    const totalPrice = document.getElementById('total-price');
+    const toppingCheckboxes = document.querySelectorAll('.topping-checkbox');
+
+    // Size prices
+    const sizePrices = {
+        'small': 0,
+        'medium': 20,
+        'large': 40
+    };
+
+    // Update price when size changes
+    document.querySelectorAll('input[name="size"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const price = sizePrices[this.value];
+            sizeUpgrade.textContent = `₹${price.toFixed(2)}`;
+            updateTotal();
+        });
+    });
+
+    // Update price when toppings change
+    toppingCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateTotal();
+        });
+    });
+
+    function updateTotal() {
+        const selectedSize = document.querySelector('input[name="size"]:checked').value;
+        const sizePrice = sizePrices[selectedSize];
+        
+        let toppingsPrice = 0;
+        toppingCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                toppingsPrice += parseFloat(checkbox.dataset.price);
+            }
+        });
+
+        sizeUpgrade.textContent = `₹${sizePrice.toFixed(2)}`;
+        toppingsTotal.textContent = `₹${toppingsPrice.toFixed(2)}`;
+        totalPrice.textContent = `₹${(basePrice + sizePrice + toppingsPrice).toFixed(2)}`;
+    }
+
+    // Handle form submission
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedToppings = Array.from(toppingCheckboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => parseInt(checkbox.value));
+
+            const data = {
+                product_id: parseInt(document.getElementById('product-id').value),
+                size: document.querySelector('input[name="size"]:checked').value,
+                container: document.querySelector('input[name="container"]:checked').value,
+                toppings: selectedToppings,
+                extra_notes: document.getElementById('extra-notes').value
+            };
+
+            fetch('/api/customize/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/cart';
+                } else {
+                    alert(data.message || 'Failed to add item to cart');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+
+    // Initialize the price display
+    updateTotal();
+});
+</script>

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Payment - Ice Cream Delight{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+    .payment-form {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    #payment-element {
+        margin-bottom: 24px;
+    }
+    #payment-message {
+        color: rgb(105, 115, 134);
+        font-size: 16px;
+        line-height: 20px;
+        padding-top: 12px;
+        text-align: center;
+    }
+    #payment-form button {
+        background: #5469d4;
+        color: #ffffff;
+        font-family: Arial, sans-serif;
+        border-radius: 4px;
+        border: 0;
+        padding: 12px 16px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: block;
+        transition: all 0.2s ease;
+        box-shadow: 0px 4px 5.5px 0px rgba(0, 0, 0, 0.07);
+        width: 100%;
+    }
+    #payment-form button:hover {
+        filter: contrast(115%);
+    }
+    #payment-form button:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    .spinner {
+        display: none;
+    }
+    .spinner.active {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Complete Your Order</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h4>Order Summary</h4>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₹{{ "%.2f"|format(item.product.price) }}</td>
+                                        <td>₹{{ "%.2f"|format(item.total) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
+                                        <td><strong>₹{{ "%.2f"|format(total) }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if session.get('delivery_option') == 'delivery' and address %}
+                    <div class="mb-4">
+                        <h4>Delivery Address</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="mb-1"><strong>{{ address.street }}</strong></p>
+                                <p class="mb-1">{{ address.city }}, {{ address.state }} {{ address.postal_code }}</p>
+                                <p class="mb-1">{{ address.country }}</p>
+                                <p class="mb-0">Phone: {{ address.phone }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h4>Payment Details</h4>
+                        <form id="payment-form" action="{{ url_for('payment_success') }}" method="GET">
+                            <div class="mb-3">
+                                <label for="card-number" class="form-label">Card Number</label>
+                                <input type="text" class="form-control" id="card-number" placeholder="1234 5678 9012 3456" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="expiry" class="form-label">Expiry Date</label>
+                                    <input type="text" class="form-control" id="expiry" placeholder="MM/YY" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="cvv" class="form-label">CVV</label>
+                                    <input type="text" class="form-control" id="cvv" placeholder="123" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name on Card</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Pay ₹{{ "%.2f"|format(total) }}</button>
+                                <a href="{{ url_for('payment_cancel') }}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('payment-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    // Here you would typically integrate with a payment gateway
+    // For demo purposes, we'll just redirect to success
+    window.location.href = "{{ url_for('payment_success') }}";
+});
+</script>
+{% endblock %}

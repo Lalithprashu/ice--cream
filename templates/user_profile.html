@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- User Profile Card -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Profile Information</h5>
+                    <p class="card-text"><strong>Username:</strong> {{ current_user.username }}</p>
+                    <p class="card-text"><strong>Email:</strong> {{ current_user.email }}</p>
+                    <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order History -->
+        <div class="col-md-8">
+            <h3>Order History</h3>
+            {% if orders %}
+                {% for order in orders %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        Order #{{ order.id }} - {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    <div class="card-body">
+                        <h6>Status: {{ order.status }}</h6>
+                        <h6>Total: ₹{{ "%.2f"|format(order.total_amount) }}</h6>
+                        <ul class="list-unstyled">
+                            {% for item in order.items %}
+                            <li>{{ item.product.name }} x {{ item.quantity }} - ₹{{ "%.2f"|format(item.price * item.quantity) }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>No orders found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
